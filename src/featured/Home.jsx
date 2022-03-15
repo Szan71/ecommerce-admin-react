@@ -36,6 +36,8 @@ const Home = () => {
     description: "",
   });
 
+  const [disableForm, setDisableForm] = useState(false);
+
   const [accessBtn, setAccessBtn] = useState({
     save: true,
     update: false,
@@ -69,6 +71,8 @@ const Home = () => {
       cancel: true,
     });
 
+    setDisableForm(false);
+
     if (!formikForm.values.id) {
       delete formikForm.values.id;
       dispatch(createProductAction(formikForm.values));
@@ -92,6 +96,8 @@ const Home = () => {
       update: true,
       cancel: true,
     });
+    setDisableForm(false);
+
     formikForm.setValues(el).then((res) => {});
   };
 
@@ -107,6 +113,8 @@ const Home = () => {
       update: false,
       cancel: true,
     });
+    setDisableForm(true);
+
     formikForm.setValues(el).then((res) => {});
   };
 
@@ -154,7 +162,7 @@ const Home = () => {
           </Modal.Header>
           <Modal.Body>
             {/* Name input */}
-            <div className="form-outline">
+            <div className="form-outline m-10">
               <label className="form-label" htmlFor="product-name">
                 Name
               </label>
@@ -162,6 +170,7 @@ const Home = () => {
                 type="text"
                 id="name"
                 name="name"
+                disabled={disableForm}
                 className="form-control form-control-lg"
                 placeholder="Enter the product name"
                 value={formikForm?.values.name}
@@ -187,6 +196,7 @@ const Home = () => {
                 type="number"
                 id="quantity"
                 name="quantity"
+                disabled={disableForm}
                 className="form-control form-control-lg"
                 placeholder="Enter the quantity"
                 value={formikForm?.values.quantity}
@@ -212,6 +222,7 @@ const Home = () => {
                 type="text"
                 id="image"
                 name="image"
+                disabled={disableForm}
                 className="form-control form-control-lg"
                 placeholder="Enter a valid image link"
                 value={formikForm?.values.image}
@@ -237,6 +248,7 @@ const Home = () => {
                 type="text"
                 id="description"
                 name="description"
+                disabled={disableForm}
                 className="form-control form-control-lg"
                 placeholder="Say something about this product..."
                 value={formikForm?.values.description}
