@@ -6,10 +6,11 @@ import reportWebVitals from './reportWebVitals';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
 import { Provider } from 'react-redux';
-import { createStore } from 'redux';
+import { createStore, applyMiddleware } from 'redux';
 import defaultReducer from './store/reducer';
+import thunk from 'redux-thunk';
 
-const store = createStore(defaultReducer);
+const store = createStore(defaultReducer, applyMiddleware(thunk));
 ReactDOM.render(
   <Provider store={store}>
     <App />

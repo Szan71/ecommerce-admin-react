@@ -30,7 +30,7 @@ const Login = () => {
       .post(`/auth/login`, values)
       .then((res) => {
         console.log(res);
-        localStorage.setItem("token", true);
+        localStorage.setItem("token", res['data']['data']['token']);
         dispatch(loginAction());
         history.push("/home");
 

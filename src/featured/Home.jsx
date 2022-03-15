@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
 import Table from "react-bootstrap/Table";
@@ -8,23 +8,31 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEdit, faTrash, faEye } from "@fortawesome/free-solid-svg-icons";
 import { useHistory } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { logoutAction } from "../store/action";
+import { useSelector } from "react-redux";
+import {
+  logoutAction,
+  getAllProductAction,
+  createProductAction,
+  deleteProductAction,
+  updateProductAction,
+} from "../store/action";
 
 const Home = () => {
+  const { data, isCreate } = useSelector((state) => state.product);
   const [show, setShow] = useState(false);
   const history = useHistory();
   const dispatch = useDispatch();
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
-  const regUrl =
-    /^((http|https):\/\/)?(www.)?(?!.*(http|https|www.))[a-zA-Z0-9_-]+(\.[a-zA-Z]+)+(\/)?.([\w\?[a-zA-Z-_%\/@?]+)*([^\/\w\?[a-zA-Z0-9_-]+=\w+(&[a-zA-Z0-9_]+=\w+)*)?$/;
+  // const regUrl =
+  // /^((http|https):\/\/)?(www.)?(?!.*(http|https|www.))[a-zA-Z0-9_-]+(\.[a-zA-Z]+)+(\/)?.([\w\?[a-zA-Z-_%\/@?]+)*([^\/\w\?[a-zA-Z0-9_-]+=\w+(&[a-zA-Z0-9_]+=\w+)*)?$/;
 
   const [addProductForm, setProductForm] = useState({
     id: "",
-    productName: "",
+    name: "",
     quantity: "",
-    imageUrl: "",
+    image: "",
     description: "",
   });
 
@@ -34,37 +42,26 @@ const Home = () => {
     cancel: true,
   });
 
-  const [tableData, setTableData] = useState([
-    {
-      id: "1",
-      productName: "iPhone 13",
-      description: "Apple iPhone 13 Pro 256GB Matte Black",
-      imageUrl: "www.apple.com/iPhone13",
-      quantity: "5",
-    },
-  ]);
-
   const onValidation = yup.object().shape({
-    id: yup.number().required("Id is required"),
-    productName: yup.string().required("Name is required"),
+    // id: yup.number().required("Id is required"),
+    name: yup.string().required("Name is required"),
     quantity: yup.number().required("Quantity is required"),
-    imageUrl: yup.string().matches(regUrl, "Should be a valid URL"),
+    image: yup.string().required("Should be a valid URL"),
     description: yup
       .string()
       .max(256, "Too Long!")
       .required("Description is required"),
   });
 
-  const onSubmit = (values) => {
-    if (formikForm.values["id"]) {
-      setTableData([
-        ...tableData.filter((el) => el["id"] !== formikForm.values["id"]),
-        formikForm.values,
-      ]);
-    } else {
-      setTableData([...tableData, values]);
-    }
-    // setTableData([...tableData, formikForm.values]);
+  const onSubmit = async () => {
+    // if (formikForm.values["id"]) {
+    //   setTableData([
+    //     ...tableData.filter((el) => el["id"] !== formikForm.values["id"]),
+    //     formikForm.values,
+    //   ]);
+    // } else {
+    //   setTableData([...tableData, values]);
+    // }
 
     setAccessBtn({
       save: true,
@@ -72,8 +69,22 @@ const Home = () => {
       cancel: true,
     });
 
+    if (!formikForm.values.id) {
+      delete formikForm.values.id;
+      dispatch(createProductAction(formikForm.values));
+      await dispatch(getAllProductAction());
+    } else {
+      dispatch(updateProductAction(formikForm.values));
+    }
+
     formikForm.resetForm();
   };
+
+  const formikForm = useFormik({
+    initialValues: addProductForm,
+    onSubmit,
+    validationSchema: onValidation,
+  });
 
   const onEdit = (el) => {
     setAccessBtn({
@@ -84,9 +95,10 @@ const Home = () => {
     formikForm.setValues(el).then((res) => {});
   };
 
-  const onDelete = (el) => {
-    console.log(el);
-    setTableData(tableData.filter((data) => data["id"] !== el["id"]));
+  const onDelete = async (el) => {
+    // setTableData(tableData.filter((data) => data["id"] !== el["id"]));
+    await dispatch(deleteProductAction(el["id"]));
+    dispatch(getAllProductAction());
   };
 
   const onView = (el) => {
@@ -98,18 +110,15 @@ const Home = () => {
     formikForm.setValues(el).then((res) => {});
   };
 
-
-  const formikForm = useFormik({
-    initialValues: addProductForm,
-    onSubmit,
-    validationSchema: onValidation,
-  });
-
   const logout = () => {
     dispatch(logoutAction());
     localStorage.removeItem("token");
     history.push("/login");
   };
+
+  useEffect(() => {
+    dispatch(getAllProductAction()); //to get first list of products
+  }, []);
 
   return (
     <div className="container">
@@ -144,31 +153,6 @@ const Home = () => {
             <Modal.Title>Add Products</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            {/* Id input */}
-            <div className="form-outline">
-              <label className="form-label" htmlFor="id">
-                id
-              </label>
-              <input
-                type="number"
-                id="id"
-                name="id"
-                className="form-control form-control-lg"
-                placeholder="Enter product id"
-                value={formikForm?.values.id}
-                onBlur={formikForm.handleBlur}
-                onChange={formikForm.handleChange}
-              />
-              {formikForm.errors.id
-                ? formikForm.touched.id && (
-                    <span className="text-danger ml-3">
-                      {formikForm.errors.id}
-                    </span>
-                  )
-                : null}
-              <br />
-            </div>
-
             {/* Name input */}
             <div className="form-outline">
               <label className="form-label" htmlFor="product-name">
@@ -176,18 +160,18 @@ const Home = () => {
               </label>
               <input
                 type="text"
-                id="productName"
-                name="productName"
+                id="name"
+                name="name"
                 className="form-control form-control-lg"
                 placeholder="Enter the product name"
-                value={formikForm?.values.productName}
+                value={formikForm?.values.name}
                 onBlur={formikForm.handleBlur}
                 onChange={formikForm.handleChange}
               />
-              {formikForm.errors.productName
-                ? formikForm.touched.productName && (
+              {formikForm.errors.name
+                ? formikForm.touched.name && (
                     <span className="text-danger ml-3">
-                      {formikForm.errors.productName}
+                      {formikForm.errors.name}
                     </span>
                   )
                 : null}
@@ -226,18 +210,18 @@ const Home = () => {
               </label>
               <input
                 type="text"
-                id="imageUrl"
-                name="imageUrl"
+                id="image"
+                name="image"
                 className="form-control form-control-lg"
                 placeholder="Enter a valid image link"
-                value={formikForm?.values.imageUrl}
+                value={formikForm?.values.image}
                 onBlur={formikForm.handleBlur}
                 onChange={formikForm.handleChange}
               />
-              {formikForm.errors.imageUrl
-                ? formikForm.touched.imageUrl && (
+              {formikForm.errors.image
+                ? formikForm.touched.image && (
                     <span className="text-danger ml-3">
-                      {formikForm.errors.imageUrl}
+                      {formikForm.errors.image}
                     </span>
                   )
                 : null}
@@ -311,13 +295,13 @@ const Home = () => {
           </tr>
         </thead>
         <tbody>
-          {tableData.map((el, index) => {
+          {data.map((el, index) => {
             return (
               <tr key={index}>
                 <td>{index + 1}</td>
-                <td>{el.productName}</td>
+                <td>{el.name}</td>
                 <td>{el.quantity}</td>
-                <td>{el.imageUrl}</td>
+                <td>{el.image}</td>
                 <td>{el.description}</td>
                 <td>
                   <button
@@ -350,8 +334,6 @@ const Home = () => {
                   >
                     <FontAwesomeIcon icon={faTrash} />
                   </button>
-
-                  
                 </td>
               </tr>
             );
